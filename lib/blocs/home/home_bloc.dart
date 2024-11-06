@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:free_api_sample_may/blocs/home/home_event.dart';
@@ -10,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   HomeBloc() : super(HomeInitial()) {
-    on<HomeEvent>((event, emit) async {
+    on<FetchProductsEvent>((event, emit) async {
       emit(HomeLoadingState());
 
       final url =
@@ -34,5 +35,24 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         emit(HomeErrorState(errorMessage: e.toString()));
       }
     });
+
+    on<DeleteAProductEvent>(
+      (event, emit) async {
+        emit(HomeLoadingState());
+        final url = Uri.parse(
+            "https://freeapi.luminartechnohub.com/product-delete/${event.productId}/");
+        try {
+          final res = await http.delete(url, headers: {
+            "Authorization": "Bearer ${await AppUtils.getAccesToken()}"
+          });
+          if (res.statusCode == 200) {
+            log(res.body);
+            add(FetchProductsEvent());
+          }
+        } catch (e) {
+          emit(HomeErrorState(errorMessage: e.toString()));
+        }
+      },
+    );
   }
 }
